@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: stormpeak-coop-lobby
+    runtime: node
+    plan: free
+    rootDir: coop-server
+    buildCommand: npm install --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health
