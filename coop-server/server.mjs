@@ -53,7 +53,7 @@ export function createLobby({ roomLifetime = 7200000, maxRooms = 500 } = {}) {
       case 'teleport': {
         if (room.phase !== 'combat' || !Number.isInteger(message.perch) || message.perch < 0 || message.perch > 4) return;
         const now = Date.now();
-        const allowed = message.perch !== room.perches[slot] && message.perch !== room.perches[1-slot] && now - (socket.lastTeleport || 0) >= 250;
+        const allowed = message.perch !== room.perches[slot] && now - (socket.lastTeleport || 0) >= 250;
         if (allowed) { room.perches[slot] = message.perch; socket.lastTeleport = now; }
         emit(room, { type: 'teleport_result', epoch: room.epoch, slot, allowed, perch: room.perches[slot] });
         break;
@@ -68,7 +68,7 @@ export function createLobby({ roomLifetime = 7200000, maxRooms = 500 } = {}) {
       case 'blessing': {
         const caps = { power: 3, flow: 3, guard: 3, blink: 3, precision: 1, echo: 3 };
         for (const id of ['force','fire','chromatic','frost','vines','acid','radiant','storm','void']) caps[`mod_${id}`] = 1;
-        if ((room.wave === 1) !== String(message.id).startsWith('mod_')) return;
+        // Allow stacked elemental rewards and normal blessings at every reward wave.
         if (room.phase !== 'reward' || room.ready[slot] || !Object.hasOwn(caps, message.id)) return;
         const owned = room.blessings[slot];
         if ((owned[message.id] || 0) >= caps[message.id]) return;
@@ -85,7 +85,7 @@ export function createLobby({ roomLifetime = 7200000, maxRooms = 500 } = {}) {
         if (!['guild', 'combat'].includes(room.phase)) return;
         if (!Array.isArray(message.position) || message.position.length !== 2 || !message.position.every(n => Number.isFinite(n) && Math.abs(n) < 10000)) return;
         if (!heroes.has(message.character)) return;
-        if (room.phase === 'combat' && message.character === 'barbarian' && Number.isInteger(message.walk_perch) && message.walk_perch >= 0 && message.walk_perch < 5 && room.perches[1-slot] !== message.walk_perch) room.perches[slot] = message.walk_perch;
+        if (room.phase === 'combat' && message.character === 'barbarian' && Number.isInteger(message.walk_perch) && message.walk_perch >= 0 && message.walk_perch < 5) room.perches[slot] = message.walk_perch;
         send(room.members[1-slot], { type: 'player', epoch: room.epoch, slot, position: message.position, character: message.character,
           hp: Math.max(0, Math.min(100000, Number(message.hp) || 0)), perches: room.perches, art: message.art || {}, animation: String(message.animation || 'idle').slice(0,32) }); break;
       case 'world':
